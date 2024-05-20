@@ -41,6 +41,75 @@ public class OracleConnection {
         }
     }
 
+    public void updateObject(Object currentObject, Object newObject) {
+        try {
+            // Obtener la clase del objeto existente
+            Class<?> objectClass = currentObject.getClass();
+            // Obtener el nombre de la tabla basado en el nombre de la clase
+            String tableName = objectClass.getSimpleName().toLowerCase(); 
+    
+            // Verificar si la tabla existe
+            if (!tableExist(tableName)) {
+                System.out.println("La tabla " + tableName + " no existe.");
+                return;
+            }
+    
+            // Verificar si el objeto existente está presente en la tabla
+            if (!objectExists(tableName, objectClass, currentObject)) {
+                System.out.println("El objeto existente no se encuentra en la tabla.");
+                return;
+            }
+    
+            // Actualizar el objeto existente en la tabla
+            StringBuilder query = new StringBuilder("UPDATE ").append(tableName).append(" SET ");      //string
+        
+            Field[] currentObjAttributes = objectClass.getDeclaredFields();
+
+            for (Field objAttribute : currentObjAttributes) {
+
+                objAttribute.setAccessible(true);
+                String nombreCampo = objAttribute.getName();
+                Object valorCampoActualizado = objAttribute.get(newObject);
+    
+                // Agregar el campo y su nuevo valor a la consulta de actualización
+                if (objAttribute.getType() == String.class) {
+                    query.append(nombreCampo).append(" = '").append(valorCampoActualizado).append("', ");
+                } else {
+                    query.append(nombreCampo).append(" = ").append(valorCampoActualizado).append(", ");
+                }
+            }
+    
+            // Eliminar la coma y el espacio extra al final de la consulta de actualización
+            query.delete(query.length() - 2, query.length());
+    
+            // Construir la condición WHERE para identificar el objeto a actualizar
+            query.append(" WHERE ");
+            for (Field campo : currentObjAttributes) {
+                campo.setAccessible(true);
+                String nombreCampo = campo.getName();
+                Object valorCampoExistente = campo.get(currentObject);
+    
+                // Agregar el campo y su valor correspondiente a la condición WHERE
+                if (campo.getType() == String.class) {
+                    query.append(nombreCampo).append(" = '").append(valorCampoExistente).append("' AND ");
+                } else {
+                    query.append(nombreCampo).append(" = ").append(valorCampoExistente).append(" AND ");
+                }
+            }
+    
+            // Eliminar la última "AND" de la condición WHERE
+            query.delete(query.length() - 5, query.length());
+    
+            // Ejecutar la consulta de actualización
+            try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                statement.executeUpdate();
+                System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente.");
+            }
+        } catch (SQLException | IllegalAccessException e) {
+            System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage());
+        }
+    }
+
 
 
     private void createNewTable(String pTableName, Class<?> pObjectClass) throws SQLException {
