@@ -10,7 +10,7 @@ public class DatabaseConnect {
     private static String ORACLE_PASSWORD;
     private static String URL;
 
-    public static Connection conectarOracleXE(String pUser, String pPass, String pHost, String pPort, String pEdition) throws SQLException {
+    public Connection connectWithOracle(String pUser, String pPass, String pHost, String pPort, String pEdition) throws SQLException {
         ORACLE_USER = pUser;
         ORACLE_PASSWORD = pPass;
         URL = "jdbc:oracle:thin:@" + pHost + ":" + pPort + ":" + pEdition;
