@@ -2,16 +2,16 @@ package code;
 
 public class Perro {
 
-    private String raza;
     private String nombre;
+    private String raza;
     private String comidaFavorita;
     private int edad;
 
     public Perro(){
-        
+
     }
     
-    public Perro(String raza, String nombre, String comidaFavorita, int edad) {
+    public Perro(String nombre, String raza, String comidaFavorita, int edad) {
         this.raza = raza;
         this.nombre = nombre;
         this.comidaFavorita = comidaFavorita;

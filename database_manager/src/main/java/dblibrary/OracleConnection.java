@@ -32,7 +32,7 @@ public class OracleConnection {
                 
                 createNewTable(tableName, objectClass); // Crear la tabla si no existe
             }catch(SQLException e){
-
+                System.out.println(e.getMessage());
             }
             
             insertObject(tableName, objectClass, pObject); // Insertar el objeto en la tabla
@@ -137,25 +137,36 @@ public class OracleConnection {
             System.out.println("La tabla " + pTableName + " ya existe.");
             return;
         }
-
+        
         StringBuilder query = new StringBuilder("CREATE TABLE ")
                 .append(pTableName)
                 .append(" (");
 
         Field[] objAttributes = pObjectClass.getDeclaredFields();
-        
+        boolean primaryKey = false;
+
         for (Field objAttribute : objAttributes) { 
 
             objAttribute.setAccessible(true); // Permitir acceso a campos privados
             String variableName = objAttribute.getName();
             String variableType = getTypeObjectString(objAttribute.getType());
-            query.append(variableName).append(" ").append(variableType).append(", ");           //string
+            query.append(variableName).append(" ").append(variableType);          //string
+        
+            if (variableName.equals(pTableName + "_id") && primaryKey == false) {
+                query.append(" PRIMARY KEY");
+                primaryKey = true;
+            }
+            query.append(", ");
         }
-
+        
         // Eliminar la coma y el espacio extra al final de la definición de la tabla
         query.delete(query.length() - 2, query.length());
         query.append(")");
 
+        if (!primaryKey) {
+            System.out.println("La clase " + pTableName + " no tiene un campo definido para clave primaria.");
+        }
+        System.out.println(query.toString()); //probar
         try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
             statement.executeUpdate();
             System.out.println("Tabla " + pTableName + " creada correctamente.");
