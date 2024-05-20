@@ -13,10 +13,10 @@ public class OracleConnection {
 
     private Connection connection;
 
-    public OracleConnection(String pUser, String pPass, String pHost, String pPort, String pEdition) throws SQLException {
+    public OracleConnection(String username, String password, String host, String port, String edition) throws SQLException {
         
         DatabaseConnect newConnection = new DatabaseConnect();
-        this.connection = newConnection.connectWithOracle(pUser, pPass, pHost, pPort, pEdition);
+        this.connection = newConnection.connectWithOracle(username, password, host, port, edition);
     }
 
     public OracleConnection(Connection pConnection){
@@ -108,6 +108,25 @@ public class OracleConnection {
         } catch (SQLException | IllegalAccessException e) {
             System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage());
         }
+    }
+
+    public <T> List<T> getAllObjects(Class<T> objectClass) {
+        List<T> objList = new ArrayList<>();
+        String tableName = objectClass.getSimpleName().toLowerCase(); // Derivar el nombre de la tabla del nombre de la clase
+        try {
+            String query = "SELECT * FROM " + tableName;
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) { // construir cada objeto obtenido en un objeto de la clase
+                        T object = buildObject(objectClass, resultSet);
+                        objList.add(object);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al recuperar objetos de la tabla: " + e.getMessage());
+        }
+        return objList;
     }
 
 
@@ -249,5 +268,45 @@ public class OracleConnection {
         }
 
         return false;
+    }
+
+    private <T> T buildObject(Class<T> objectClass, ResultSet resultSet) throws SQLException {
+        try {
+            Constructor<T> constructor = objectClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            T instance = constructor.newInstance();
+
+            Field[] objAttributes = objectClass.getDeclaredFields();
+
+            for (Field objAttribute : objAttributes) {
+                
+                objAttribute.setAccessible(true);
+                String variableName = objAttribute.getName();
+                Object newObject = resultSet.getObject(variableName);
+
+                if (newObject != null) {
+                    // Convertir tipos si es necesario
+                    if (objAttribute.getType() == int.class || objAttribute.getType() == Integer.class) {
+                        newObject = ((Number) newObject).intValue();
+                    } else if (objAttribute.getType() == double.class || objAttribute.getType() == Double.class) {
+                        newObject = ((Number) newObject).doubleValue();
+                    } else if (objAttribute.getType() == float.class || objAttribute.getType() == Float.class) {
+                        newObject = ((Number) newObject).floatValue();
+                    } else if (objAttribute.getType() == long.class || objAttribute.getType() == Long.class) {
+                        newObject = ((Number) newObject).longValue();
+                    } else if (objAttribute.getType() == boolean.class || objAttribute.getType() == Boolean.class) {
+                        newObject = (newObject instanceof Number) ? ((Number) newObject).intValue() != 0 : Boolean.parseBoolean(newObject.toString());
+                    }
+
+                    objAttribute.set(instance, newObject);
+                }
+            }
+
+            return instance;
+        } catch (NoSuchMethodException e) {
+            throw new SQLException("No se pudo encontrar el constructor predeterminado para la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e);
+        } catch (InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+            throw new SQLException("Error al instanciar la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e);
+        }
     }
 }

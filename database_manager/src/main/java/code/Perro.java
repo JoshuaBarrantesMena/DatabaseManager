@@ -6,6 +6,10 @@ public class Perro {
     private String nombre;
     private String comidaFavorita;
     private int edad;
+
+    public Perro(){
+        
+    }
     
     public Perro(String raza, String nombre, String comidaFavorita, int edad) {
         this.raza = raza;
