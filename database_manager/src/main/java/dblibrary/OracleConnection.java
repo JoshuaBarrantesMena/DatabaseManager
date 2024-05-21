@@ -68,14 +68,14 @@ public class OracleConnection {
             for (Field objAttribute : currentObjAttributes) {
 
                 objAttribute.setAccessible(true);
-                String nombreCampo = objAttribute.getName();
-                Object valorCampoActualizado = objAttribute.get(newObject);
+                String variableName = objAttribute.getName();
+                Object updatedVariableValue = objAttribute.get(newObject);
     
                 // Agregar el campo y su nuevo valor a la consulta de actualización
                 if (objAttribute.getType() == String.class) {
-                    query.append(nombreCampo).append(" = '").append(valorCampoActualizado).append("', ");
+                    query.append(variableName).append(" = '").append(updatedVariableValue).append("', ");
                 } else {
-                    query.append(nombreCampo).append(" = ").append(valorCampoActualizado).append(", ");
+                    query.append(variableName).append(" = ").append(updatedVariableValue).append(", ");
                 }
             }
     
@@ -84,16 +84,16 @@ public class OracleConnection {
     
             // Construir la condición WHERE para identificar el objeto a actualizar
             query.append(" WHERE ");
-            for (Field campo : currentObjAttributes) {
-                campo.setAccessible(true);
-                String nombreCampo = campo.getName();
-                Object valorCampoExistente = campo.get(currentObject);
+            for (Field currentObjAttribute : currentObjAttributes) {
+                currentObjAttribute.setAccessible(true);
+                String variableName = currentObjAttribute.getName();
+                Object existingVariableValue = currentObjAttribute.get(currentObject);
     
                 // Agregar el campo y su valor correspondiente a la condición WHERE
-                if (campo.getType() == String.class) {
-                    query.append(nombreCampo).append(" = '").append(valorCampoExistente).append("' AND ");
+                if (currentObjAttribute.getType() == String.class) {
+                    query.append(variableName).append(" = '").append(existingVariableValue).append("' AND ");
                 } else {
-                    query.append(nombreCampo).append(" = ").append(valorCampoExistente).append(" AND ");
+                    query.append(variableName).append(" = ").append(existingVariableValue).append(" AND ");
                 }
             }
     
@@ -128,6 +128,75 @@ public class OracleConnection {
         }
         return objList;
     }
+
+    public <T> Object getObject(Class<T> objectClass, String attribute){
+        
+        String tableName = objectClass.getSimpleName().toLowerCase();
+        String primaryKey = null;
+        String query = "SELECT * FROM " + tableName.toUpperCase() + " Where ";
+
+        try{
+            String queryPK = "select column_name from user_cons_columns ucc join user_constraints uc on ucc.constraint_name = uc.constraint_name ";
+            queryPK += "where uc.constraint_type = 'P' and uc.table_name = '" + tableName.toUpperCase() + "'";
+
+            try(PreparedStatement statement = connection.prepareStatement(queryPK)){
+
+                ResultSet resultSet = statement.executeQuery(queryPK);
+                while(resultSet.next()){
+                    primaryKey = (String)resultSet.getObject("COLUMN_NAME");
+                }
+            }
+
+            Object object = null;
+
+            if(primaryKey != null){
+
+                query += primaryKey + " = +" + attribute + "'";
+                try(PreparedStatement statement = connection.prepareStatement(query)){
+
+                    ResultSet resultSet2 = statement.executeQuery(query);
+                    while(resultSet2.next()){
+                        object = buildObject(objectClass, resultSet2);
+                        break;
+                    }
+
+                    if(object != null){
+                        return object;
+                    }else{
+                        System.out.println("No hay objeto con ese parametro");
+                    }
+                }
+            }
+            else{
+                System.out.println("No hay llave primaria"); //tmp
+
+                Field[] classAttributes = objectClass.getDeclaredFields();
+                String defaultAttribute = classAttributes[0].getName();
+                query += defaultAttribute + " = '" + attribute + "'";
+
+                try(PreparedStatement statement = connection.prepareStatement(query)){
+
+                    ResultSet resultSet2 = statement.executeQuery(query);
+                    while(resultSet2.next()){
+                        object = buildObject(objectClass, resultSet2);
+                        break;
+                    }
+
+                    if(object != null){
+                        return object;
+                    }else{
+                        System.out.println("No hay objeto con ese parametro");
+                    }
+                }
+            }
+
+        }catch(SQLException e){
+            System.out.println(e.getMessage() + "En la tabla " + tableName);  //tmp
+        }
+        return null;
+    }
+
+
 
 
 
