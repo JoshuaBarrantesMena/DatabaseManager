@@ -140,7 +140,7 @@ public class OracleConnection {
 
             if(primaryKey != null){
 
-                query += primaryKey + " = +" + attribute + "'";
+                query += primaryKey + " = '" + attribute + "'";
                 try(PreparedStatement statement = connection.prepareStatement(query)){
 
                     ResultSet resultSet2 = statement.executeQuery(query);
