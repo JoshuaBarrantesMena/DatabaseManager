@@ -92,7 +92,7 @@ public class OracleConnection {
     
             try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
                 statement.executeUpdate();
-                System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente.");
+                System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente."); //delete
             }
         } catch (SQLException | IllegalAccessException e) {
             System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage()); //modify
@@ -152,12 +152,12 @@ public class OracleConnection {
                     if(object != null){
                         return object;
                     }else{
-                        System.out.println("No hay objeto con ese parametro");
+                        System.out.println("No hay objeto con ese parametro"); //modify
                     }
                 }
             }
             else{
-                System.out.println("No hay llave primaria"); //tmp
+                System.out.println("No hay llave primaria"); //modify
 
                 Field[] classAttributes = objectClass.getDeclaredFields();
                 String defaultAttribute = classAttributes[0].getName();
@@ -191,12 +191,12 @@ public class OracleConnection {
             String tableName = objectClass.getSimpleName().toLowerCase();
 
             if (!this.tableExist(tableName)) {
-                System.out.println("The table [ " + tableName + " ] does not exist.");
+                System.out.println("The table [ " + tableName + " ] does not exist."); //modify
                 return;
             }
 
             if (!this.objectExists(tableName, objectClass, pObject)) {
-                System.out.println("The object does not exist in the table.");
+                System.out.println("The object does not exist in the table."); //modify
                 return;
             }
 
