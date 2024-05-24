@@ -27,51 +27,44 @@ public class OracleConnection {
     public void sendObject(Object pObject) {
         try {
             Class<?> objectClass = pObject.getClass();
-            String tableName = objectClass.getSimpleName().toLowerCase(); // El nombre de la tabla es igual al nombre de la clase en minúsculas
+            String tableName = objectClass.getSimpleName().toLowerCase();
             try{
                 
-                createNewTable(tableName, objectClass); // Crear la tabla si no existe
+                createNewTable(tableName, objectClass);
             }catch(SQLException e){
-                System.out.println(e.getMessage());
+                System.out.println(e.getMessage()); //modify
             }
             
-            insertObject(tableName, objectClass, pObject); // Insertar el objeto en la tabla
+            insertObject(tableName, objectClass, pObject);
         } catch (SQLException | IllegalAccessException e) {
-            System.err.println("Error al mapear la clase a la tabla: " + e.getMessage());
+            System.err.println("Error al mapear la clase a la tabla: " + e.getMessage()); //modify
         }
     }
 
     public void updateObject(Object currentObject, Object newObject) {
         try {
-            // Obtener la clase del objeto existente
+            
             Class<?> objectClass = currentObject.getClass();
-            // Obtener el nombre de la tabla basado en el nombre de la clase
             String tableName = objectClass.getSimpleName().toLowerCase(); 
-    
-            // Verificar si la tabla existe
-            if (!tableExist(tableName)) {
-                System.out.println("La tabla " + tableName + " no existe.");
-                return;
-            }
-    
-            // Verificar si el objeto existente está presente en la tabla
-            if (!objectExists(tableName, objectClass, currentObject)) {
-                System.out.println("El objeto existente no se encuentra en la tabla.");
-                return;
-            }
-    
-            // Actualizar el objeto existente en la tabla
-            StringBuilder query = new StringBuilder("UPDATE ").append(tableName).append(" SET ");      //string
-        
-            Field[] currentObjAttributes = objectClass.getDeclaredFields();
 
+            if (!tableExist(tableName)) {
+                System.out.println("La tabla " + tableName + " no existe."); //delete
+                return;
+            }
+
+            if (!objectExists(tableName, objectClass, currentObject)) {
+                System.out.println("El objeto existente no se encuentra en la tabla."); //modify
+                return;
+            }
+    
+            StringBuilder query = new StringBuilder("UPDATE ").append(tableName).append(" SET ");
+            Field[] currentObjAttributes = objectClass.getDeclaredFields();
             for (Field objAttribute : currentObjAttributes) {
 
                 objAttribute.setAccessible(true);
                 String variableName = objAttribute.getName();
                 Object updatedVariableValue = objAttribute.get(newObject);
-    
-                // Agregar el campo y su nuevo valor a la consulta de actualización
+
                 if (objAttribute.getType() == String.class) {
                     query.append(variableName).append(" = '").append(updatedVariableValue).append("', ");
                 } else {
@@ -79,17 +72,15 @@ public class OracleConnection {
                 }
             }
     
-            // Eliminar la coma y el espacio extra al final de la consulta de actualización
             query.delete(query.length() - 2, query.length());
-    
-            // Construir la condición WHERE para identificar el objeto a actualizar
             query.append(" WHERE ");
+            
             for (Field currentObjAttribute : currentObjAttributes) {
+
                 currentObjAttribute.setAccessible(true);
                 String variableName = currentObjAttribute.getName();
                 Object existingVariableValue = currentObjAttribute.get(currentObject);
     
-                // Agregar el campo y su valor correspondiente a la condición WHERE
                 if (currentObjAttribute.getType() == String.class) {
                     query.append(variableName).append(" = '").append(existingVariableValue).append("' AND ");
                 } else {
@@ -97,34 +88,32 @@ public class OracleConnection {
                 }
             }
     
-            // Eliminar la última "AND" de la condición WHERE
             query.delete(query.length() - 5, query.length());
     
-            // Ejecutar la consulta de actualización
             try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
                 statement.executeUpdate();
                 System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente.");
             }
         } catch (SQLException | IllegalAccessException e) {
-            System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage());
+            System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage()); //modify
         }
     }
 
     public <T> List<T> getAllObjects(Class<T> objectClass) {
         List<T> objList = new ArrayList<>();
-        String tableName = objectClass.getSimpleName().toLowerCase(); // Derivar el nombre de la tabla del nombre de la clase
+        String tableName = objectClass.getSimpleName().toLowerCase();
         try {
             String query = "SELECT * FROM " + tableName;
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    while (resultSet.next()) { // construir cada objeto obtenido en un objeto de la clase
+                    while (resultSet.next()) {
                         T object = buildObject(objectClass, resultSet);
                         objList.add(object);
                     }
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error al recuperar objetos de la tabla: " + e.getMessage());
+            System.err.println("Error al recuperar objetos de la tabla: " + e.getMessage()); //modify
         }
         return objList;
     }
@@ -185,15 +174,57 @@ public class OracleConnection {
                     if(object != null){
                         return object;
                     }else{
-                        System.out.println("No hay objeto con ese parametro");
+                        System.out.println("No hay objeto con ese parametro"); //delete
                     }
                 }
             }
 
         }catch(SQLException e){
-            System.out.println(e.getMessage() + "En la tabla " + tableName);  //tmp
+            System.out.println(e.getMessage() + "En la tabla " + tableName); //modifiy
         }
         return null;
+    }
+
+    public void deleteObject(Object pObject) {
+        try {
+            Class<?> objectClass = pObject.getClass();
+            String tableName = objectClass.getSimpleName().toLowerCase();
+
+            if (!this.tableExist(tableName)) {
+                System.out.println("The table [ " + tableName + " ] does not exist.");
+                return;
+            }
+
+            if (!this.objectExists(tableName, objectClass, pObject)) {
+                System.out.println("The object does not exist in the table.");
+                return;
+            }
+
+            StringBuilder query = new StringBuilder("DELETE FROM ").append(tableName).append(" WHERE ");
+            Field[] objAttributes = objectClass.getDeclaredFields();
+
+            for (Field field : objAttributes) {
+                field.setAccessible(true);
+                String fieldName = field.getName();
+                Object fieldValue = field.get(pObject);
+
+                if (field.getType() == String.class) {
+                    query.append(fieldName).append(" = '").append(fieldValue).append("' AND ");
+                } else {
+                    query.append(fieldName).append(" = ").append(fieldValue).append(" AND ");
+                }
+            }
+
+            query.delete(query.length() - 5, query.length()); 
+            String deleteQuery = query.toString();
+
+            try (PreparedStatement statement = this.connection.prepareStatement(deleteQuery)) {
+                statement.executeUpdate();
+                System.out.println("Object deleted from the table " + tableName + " successfully.");// delete
+            }
+        } catch (IllegalAccessException | SQLException e) {
+            System.err.println("Error deleting the object from the table: " + e.getMessage()); //modify
+        }
     }
 
 
@@ -203,7 +234,7 @@ public class OracleConnection {
     private void createNewTable(String pTableName, Class<?> pObjectClass) throws SQLException {
         
         if (tableExist(pTableName)) {
-            System.out.println("La tabla " + pTableName + " ya existe.");
+            System.out.println("La tabla " + pTableName + " ya existe."); //delete
             return;
         }
         
@@ -216,10 +247,10 @@ public class OracleConnection {
 
         for (Field objAttribute : objAttributes) { 
 
-            objAttribute.setAccessible(true); // Permitir acceso a campos privados
+            objAttribute.setAccessible(true);
             String variableName = objAttribute.getName();
             String variableType = getTypeObjectString(objAttribute.getType());
-            query.append(variableName).append(" ").append(variableType);          //string
+            query.append(variableName).append(" ").append(variableType);
         
             if (variableName.equals(pTableName + "_id") && primaryKey == false) {
                 query.append(" PRIMARY KEY");
@@ -228,17 +259,16 @@ public class OracleConnection {
             query.append(", ");
         }
         
-        // Eliminar la coma y el espacio extra al final de la definición de la tabla
         query.delete(query.length() - 2, query.length());
         query.append(")");
 
         if (!primaryKey) {
-            System.out.println("La clase " + pTableName + " no tiene un campo definido para clave primaria.");
+            System.out.println("La clase " + pTableName + " no tiene un campo definido para clave primaria."); //delete
         }
-        System.out.println(query.toString()); //probar
+        
         try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
             statement.executeUpdate();
-            System.out.println("Tabla " + pTableName + " creada correctamente.");
+            System.out.println("Tabla " + pTableName + " creada correctamente."); //delete
         }
     }
 
@@ -246,7 +276,7 @@ public class OracleConnection {
 
         if(!objectExists(pTableName, pObjectClass, pObject)){
 
-            StringBuilder query = new StringBuilder("INSERT INTO ").append(pTableName).append(" (");  //string
+            StringBuilder query = new StringBuilder("INSERT INTO ").append(pTableName).append(" (");
             StringBuilder values = new StringBuilder("VALUES (");
 
             Field[] objAttributes = pObjectClass.getDeclaredFields();
@@ -254,10 +284,10 @@ public class OracleConnection {
             for (Field objAttribute : objAttributes) {
                 objAttribute.setAccessible(true);
                 String variableName = objAttribute.getName();
-                Object variableType = objAttribute.get(pObject);
+                Object variableValue = objAttribute.get(pObject);
 
                 query.append(variableName).append(", ");
-                values.append("'").append(variableType).append("', ");
+                values.append("'").append(variableValue).append("', ");
             }
         
             query.delete(query.length() - 2, query.length());
@@ -270,10 +300,12 @@ public class OracleConnection {
 
             try (PreparedStatement statement = connection.prepareStatement(insertQuery)) {
                 statement.executeUpdate();
-                System.out.println("Datos insertados en la tabla " + pTableName + " correctamente.");
+                System.out.println("Datos insertados en la tabla " + pTableName + " correctamente."); //delete
+            }catch(SQLException e){
+                System.out.println("El objeto no pudo ser ingresado: " + e.getMessage()); //modify
             }
         }else{
-            System.out.println("El dato ingresado ya existe en su base de datos");
+            System.out.println("El dato ingresado ya existe en su base de datos"); //delete
         }
     }
 
@@ -345,6 +377,8 @@ public class OracleConnection {
                 return count > 0;
             }
             
+        }catch(SQLException e){
+            System.out.println("Error al comprobar si el objeto existe en la tabla: " + e.getMessage()); //modify
         }
 
         return false;
@@ -365,7 +399,7 @@ public class OracleConnection {
                 Object newObject = resultSet.getObject(variableName);
 
                 if (newObject != null) {
-                    // Convertir tipos si es necesario
+                    
                     if (objAttribute.getType() == int.class || objAttribute.getType() == Integer.class) {
                         newObject = ((Number) newObject).intValue();
                     } else if (objAttribute.getType() == double.class || objAttribute.getType() == Double.class) {
@@ -384,9 +418,9 @@ public class OracleConnection {
 
             return instance;
         } catch (NoSuchMethodException e) {
-            throw new SQLException("No se pudo encontrar el constructor predeterminado para la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e);
+            throw new SQLException("No se pudo encontrar el constructor predeterminado para la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
         } catch (InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-            throw new SQLException("Error al instanciar la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e);
+            throw new SQLException("Error al instanciar la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
         }
     }
 }

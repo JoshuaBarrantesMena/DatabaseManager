@@ -37,6 +37,8 @@ public class Main {
         System.out.println(nuevoPerro2.getEdad());
         System.out.println("\n");
 
+        myConnection.deleteObject(nuevoPerro);
+
         
 
         //myConnection.sendObject(persona1);
