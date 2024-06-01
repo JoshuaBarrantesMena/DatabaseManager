@@ -1,5 +1,5 @@
 # directories
-*/code/
+/database_manager/src/main/java/code
 
 # Compiled class file
 *.class
