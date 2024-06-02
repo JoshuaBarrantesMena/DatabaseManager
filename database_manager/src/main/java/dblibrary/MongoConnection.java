@@ -1,11 +1,17 @@
 package dblibrary;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
-import org.bson.Document; 
+import org.bson.Document;
+
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MongoConnection {
 
@@ -67,6 +73,27 @@ public class MongoConnection {
         }
     }
 
+    public <T> List<T> getAllObject(Class<T> pObjectClass) {
+        List<T> allObjects = new ArrayList<>();
+        String collectionName = pObjectClass.getSimpleName().toLowerCase();
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+
+        try (MongoCursor<Document> cursor = collection.find().iterator()) {
+            while (cursor.hasNext()) {
+                Document doc = cursor.next();
+                T instance = buildObject(pObjectClass, doc);
+                allObjects.add(instance);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al recuperar objetos de la colección: " + e.getMessage()); //update
+        }
+        return allObjects;
+    }
+
+
+
+
+    
     private Document toJSON(Object pObject, Class<?> pObjectClass) throws IllegalAccessException {
         Document doc = new Document();
         String idFieldName = pObjectClass.getSimpleName().toLowerCase() + "_id";
@@ -83,5 +110,25 @@ public class MongoConnection {
             }
         }
         return doc;
+    }
+
+    private <T> T buildObject(Class<T> objectClass, Document doc) throws InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException {
+        Constructor<T> constructor = objectClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        T instance = constructor.newInstance();
+
+        for (Field field : objectClass.getDeclaredFields()) {
+            field.setAccessible(true);
+            String variableName = field.getName();
+            Object newObject = doc.get(variableName);
+
+            if (newObject == null && variableName.equals(objectClass.getSimpleName().toLowerCase() + "_id")) {
+                newObject = doc.get("_id");
+            }
+
+            field.set(instance, newObject);
+        }
+
+        return instance;
     }
 }
