@@ -90,10 +90,26 @@ public class MongoConnection {
         return allObjects;
     }
 
+    public <T> T getObject(Class<T> objectClass, Object id) {
+        String collectionName = objectClass.getSimpleName().toLowerCase();
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        Document query = new Document("_id", id);
+
+        try {
+            Document doc = collection.find(query).first();
+            if (doc != null) {
+                return buildObject(objectClass, doc);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al recuperar el objeto de la colección: " + e.getMessage()); //update
+        }
+        return null;
+    }
 
 
 
-    
+
+
     private Document toJSON(Object pObject, Class<?> pObjectClass) throws IllegalAccessException {
         Document doc = new Document();
         String idFieldName = pObjectClass.getSimpleName().toLowerCase() + "_id";
