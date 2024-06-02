@@ -49,8 +49,21 @@ public class MongoConnection {
 
             collection.replaceOne(Filters.eq("_id", id), newDoc);
             System.out.println("Objeto actualizado en la colección " + collectionName + " correctamente."); //delete
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             System.err.println("Error al actualizar el documento en la colección: " + e.getMessage()); //update
+        }
+    }
+
+    public <T> void deleteObject(Class<T> clase, Object id) {
+        try {
+            String collectionName = clase.getSimpleName().toLowerCase();
+            MongoCollection<Document> collection = database.getCollection(collectionName);
+            Document findDoc = new Document("_id", id);
+    
+            collection.deleteOne(findDoc);
+            System.out.println("Documento eliminado de la colección " + collectionName + " correctamente."); //delete
+        } catch (Exception e) {
+            System.err.println("Error al eliminar el objeto de MongoDB: " + e.getMessage()); //update
         }
     }
 
