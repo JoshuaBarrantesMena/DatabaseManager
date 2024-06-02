@@ -2,6 +2,8 @@ package dblibrary;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+
 import org.bson.Document; 
 import java.lang.reflect.Field;
 
@@ -21,12 +23,34 @@ public class MongoConnection {
             MongoCollection<Document> collection = database.getCollection(collectionName);
 
             Document doc = toJSON(object, objectClass);
-            System.out.println("\n\ntest1\n\n");
             collection.insertOne(doc);
-            System.out.println("\n\ntest2\n\n");
-            System.out.println("Objeto insertado en la colección " + collectionName + " correctamente.");
+            System.out.println("Objeto insertado en la colección " + collectionName + " correctamente."); //delete
         } catch (Exception e) {
-            System.err.println("Error al insertar el objeto en la tabla: //" + e.getMessage());
+            System.err.println("Error al insertar el objeto en la tabla: //" + e.getMessage()); //update
+        }
+    }
+
+    public void updateObject(Object pNewObject) throws NoSuchFieldException, SecurityException {
+        try {
+            
+            Class<?> objectClass = pNewObject.getClass();
+            String collectionName = objectClass.getSimpleName().toLowerCase();
+            MongoCollection<Document> collection = database.getCollection(collectionName);
+
+            Document newDoc = toJSON(pNewObject, objectClass);
+            String idFiledName = objectClass.getSimpleName().toLowerCase() + "_id";
+            Field idField = objectClass.getDeclaredField(idFiledName);
+            idField.setAccessible(true);
+            Object id = idField.get(pNewObject);
+
+            if (id == null) {
+                throw new IllegalArgumentException("El campo ID no puede ser nulo"); //update
+            }
+
+            collection.replaceOne(Filters.eq("_id", id), newDoc);
+            System.out.println("Objeto actualizado en la colección " + collectionName + " correctamente."); //delete
+        } catch (IllegalAccessException e) {
+            System.err.println("Error al actualizar el documento en la colección: " + e.getMessage()); //update
         }
     }
 
@@ -35,12 +59,12 @@ public class MongoConnection {
         String idFieldName = pObjectClass.getSimpleName().toLowerCase() + "_id";
 
         for (Field field : pObjectClass.getDeclaredFields()) {
-            field.setAccessible(true); // Permitir acceso a campos privados
+            field.setAccessible(true);
             String fieldName = field.getName();
             Object fieldValue = field.get(pObject);
 
             if (fieldName.equals(idFieldName)) {
-                doc.append("_id", fieldValue); // Si el campo es el id, se añade como _id
+                doc.append("_id", fieldValue);
             } else {
                 doc.append(fieldName, fieldValue);
             }
