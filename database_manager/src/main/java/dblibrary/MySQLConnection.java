@@ -38,6 +38,66 @@ public class MySQLConnection {
         }
     }
 
+    public void updateObject(Object currentObject, Object newObject) {
+        try {
+            
+            Class<?> objectClass = currentObject.getClass();
+            String tableName = objectClass.getSimpleName().toLowerCase(); 
+
+            if (!tableExist(tableName)) {
+                System.out.println("La tabla " + tableName + " no existe."); //delete
+                return;
+            }
+
+            if (!objectExists(tableName, objectClass, currentObject)) {
+                System.out.println("El objeto existente no se encuentra en la tabla."); //modify
+                return;
+            }
+    
+            StringBuilder query = new StringBuilder("UPDATE ").append(tableName).append(" SET ");
+            Field[] currentObjAttributes = objectClass.getDeclaredFields();
+            for (Field objAttribute : currentObjAttributes) {
+
+                objAttribute.setAccessible(true);
+                String variableName = objAttribute.getName();
+                Object updatedVariableValue = objAttribute.get(newObject);
+
+                if (objAttribute.getType() == String.class) {
+                    query.append(variableName).append(" = '").append(updatedVariableValue).append("', ");
+                } else {
+                    query.append(variableName).append(" = ").append(updatedVariableValue).append(", ");
+                }
+            }
+    
+            query.delete(query.length() - 2, query.length());
+            query.append(" WHERE ");
+            
+            for (Field currentObjAttribute : currentObjAttributes) {
+
+                currentObjAttribute.setAccessible(true);
+                String variableName = currentObjAttribute.getName();
+                Object existingVariableValue = currentObjAttribute.get(currentObject);
+    
+                if (currentObjAttribute.getType() == String.class) {
+                    query.append(variableName).append(" = '").append(existingVariableValue).append("' AND ");
+                } else {
+                    query.append(variableName).append(" = ").append(existingVariableValue).append(" AND ");
+                }
+            }
+    
+            query.delete(query.length() - 5, query.length());
+    
+            try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+                statement.executeUpdate();
+                System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente."); //delete
+            }
+        } catch (SQLException | IllegalAccessException e) {
+            System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage()); //modify
+        }
+    }
+
+
+
 
 
     private void createNewTable(String pTableName, Class<?> pObjectClass) throws SQLException {
