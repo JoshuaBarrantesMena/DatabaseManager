@@ -10,25 +10,25 @@ import com.mongodb.client.MongoDatabase;
 
 public class DatabaseConnect {
     // ORACLE
+    private static String ORACLE_URL;
     private static String ORACLE_USER;
     private static String ORACLE_PASSWORD;
-    private static String URL;
 
     public Connection connectWithOracle(String pUser, String pPass, String pHost, String pPort, String pEdition) throws SQLException {
         ORACLE_USER = pUser;
         ORACLE_PASSWORD = pPass;
-        URL = "jdbc:oracle:thin:@" + pHost + ":" + pPort + ":" + pEdition;
-        return DriverManager.getConnection(URL, ORACLE_USER, ORACLE_PASSWORD);
+        ORACLE_URL = "jdbc:oracle:thin:@" + pHost + ":" + pPort + ":" + pEdition;
+        return DriverManager.getConnection(ORACLE_URL, ORACLE_USER, ORACLE_PASSWORD);
     }
     
     //MongoDB
-    private static String MONGO_URI;
+    private static String MONGO_URL;
     private MongoClient mongoClient;
     private MongoDatabase database;
 
     public MongoDatabase connectionMongo(String pHost, String pPort, String databaseName) {
-        MONGO_URI = "mongodb://" + pHost + ":" + pPort;
-        mongoClient = MongoClients.create(MONGO_URI);
+        MONGO_URL = "mongodb://" + pHost + ":" + pPort;
+        mongoClient = MongoClients.create(MONGO_URL);
         database = mongoClient.getDatabase(databaseName);
         return database;
     }
@@ -37,5 +37,17 @@ public class DatabaseConnect {
         if (mongoClient != null) {
             mongoClient.close();
         }
+    }
+
+    //MySQL
+    private static String URL_MYSQL;
+    private static String MYSQL_USER;
+    private static String MYSQL_PASSWORD;
+
+    public static Connection MySQLConnection(String pUser, String pPass, String pHost, String pPort, String pSchema) throws SQLException {
+        MYSQL_USER = pUser;
+        MYSQL_PASSWORD = pPass;
+        URL_MYSQL = "jdbc:mysql://" + pHost + ":" + pPort + "/" + pSchema;
+        return DriverManager.getConnection(URL_MYSQL, MYSQL_USER, MYSQL_PASSWORD);
     }
 }
