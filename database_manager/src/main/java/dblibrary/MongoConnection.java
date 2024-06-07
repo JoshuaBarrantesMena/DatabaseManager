@@ -19,7 +19,7 @@ public class MongoConnection {
 
     public MongoConnection(String pHost, String pPort, String dataBName) {
         DatabaseConnect connect = new DatabaseConnect();
-        this.database = connect.connectionMongo(pHost, pPort, dataBName);
+        this.database = connect.connectWithMongo(pHost, pPort, dataBName);
     }
 
     public void sendObject(Object object) {
