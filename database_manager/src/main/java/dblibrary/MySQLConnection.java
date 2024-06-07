@@ -96,6 +96,48 @@ public class MySQLConnection {
         }
     }
 
+    public void deleteObject(Object pObject) {
+        try {
+            Class<?> objectClass = pObject.getClass();
+            String tableName = objectClass.getSimpleName().toLowerCase();
+
+            if (!this.tableExist(tableName)) {
+                System.out.println("The table [ " + tableName + " ] does not exist."); //modify
+                return;
+            }
+
+            if (!this.objectExists(tableName, objectClass, pObject)) {
+                System.out.println("The object does not exist in the table."); //modify
+                return;
+            }
+
+            StringBuilder query = new StringBuilder("DELETE FROM ").append(tableName).append(" WHERE ");
+            Field[] objAttributes = objectClass.getDeclaredFields();
+
+            for (Field field : objAttributes) {
+                field.setAccessible(true);
+                String fieldName = field.getName();
+                Object fieldValue = field.get(pObject);
+
+                if (field.getType() == String.class) {
+                    query.append(fieldName).append(" = '").append(fieldValue).append("' AND ");
+                } else {
+                    query.append(fieldName).append(" = ").append(fieldValue).append(" AND ");
+                }
+            }
+
+            query.delete(query.length() - 5, query.length()); 
+            String deleteQuery = query.toString();
+
+            try (PreparedStatement statement = this.connection.prepareStatement(deleteQuery)) {
+                statement.executeUpdate();
+                System.out.println("Object deleted from the table " + tableName + " successfully.");// delete
+            }
+        } catch (IllegalAccessException | SQLException e) {
+            System.err.println("Error deleting the object from the table: " + e.getMessage()); //modify
+        }
+    }
+
 
 
 
