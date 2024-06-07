@@ -73,7 +73,7 @@ public class MongoConnection {
         }
     }
 
-    public <T> List<T> getAllObject(Class<T> pObjectClass) {
+    public <T> List<T> getAllObject(Class<T> pObjectClass) { //getAllObjects
         List<T> allObjects = new ArrayList<>();
         String collectionName = pObjectClass.getSimpleName().toLowerCase();
         MongoCollection<Document> collection = database.getCollection(collectionName);

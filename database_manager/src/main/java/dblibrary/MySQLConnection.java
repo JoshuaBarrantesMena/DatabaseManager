@@ -1,10 +1,13 @@
 package dblibrary;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MySQLConnection {
 
@@ -136,6 +139,25 @@ public class MySQLConnection {
         } catch (IllegalAccessException | SQLException e) {
             System.err.println("Error deleting the object from the table: " + e.getMessage()); //modify
         }
+    }
+
+    public <T> List<T> getAllObjects(Class<T> objectClass) {
+        List<T> objList = new ArrayList<>();
+        String tableName = objectClass.getSimpleName().toLowerCase();
+        try {
+            String query = "SELECT * FROM " + tableName;
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        T object = buildObject(objectClass, resultSet);
+                        objList.add(object);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al recuperar objetos de la tabla: " + e.getMessage()); //modify
+        }
+        return objList;
     }
 
 
@@ -293,5 +315,45 @@ public class MySQLConnection {
         }
 
         return false;
+    }
+
+    private <T> T buildObject(Class<T> objectClass, ResultSet resultSet) throws SQLException {
+        try {
+            Constructor<T> constructor = objectClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            T instance = constructor.newInstance();
+
+            Field[] objAttributes = objectClass.getDeclaredFields();
+
+            for (Field objAttribute : objAttributes) {
+                
+                objAttribute.setAccessible(true);
+                String variableName = objAttribute.getName();
+                Object newObject = resultSet.getObject(variableName);
+
+                if (newObject != null) {
+                    
+                    if (objAttribute.getType() == int.class || objAttribute.getType() == Integer.class) {
+                        newObject = ((Number) newObject).intValue();
+                    } else if (objAttribute.getType() == double.class || objAttribute.getType() == Double.class) {
+                        newObject = ((Number) newObject).doubleValue();
+                    } else if (objAttribute.getType() == float.class || objAttribute.getType() == Float.class) {
+                        newObject = ((Number) newObject).floatValue();
+                    } else if (objAttribute.getType() == long.class || objAttribute.getType() == Long.class) {
+                        newObject = ((Number) newObject).longValue();
+                    } else if (objAttribute.getType() == boolean.class || objAttribute.getType() == Boolean.class) {
+                        newObject = (newObject instanceof Number) ? ((Number) newObject).intValue() != 0 : Boolean.parseBoolean(newObject.toString());
+                    }
+
+                    objAttribute.set(instance, newObject);
+                }
+            }
+
+            return instance;
+        } catch (NoSuchMethodException e) {
+            throw new SQLException("No se pudo encontrar el constructor predeterminado para la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
+        } catch (InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+            throw new SQLException("Error al instanciar la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
+        }
     }
 }
