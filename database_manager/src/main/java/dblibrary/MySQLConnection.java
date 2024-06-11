@@ -160,6 +160,72 @@ public class MySQLConnection {
         return objList;
     }
 
+    public <T> Object getObject(Class<T> objectClass, String attribute) throws SQLException{
+        
+        String tableName = objectClass.getSimpleName().toLowerCase();
+        String primaryKey = null;
+        String query = "SELECT * FROM " + tableName.toUpperCase() + " Where ";
+
+        try{
+            String queryPK = "SHOW KEYS FROM test.persona WHERE KEY_NAME = 'PRIMARY';";
+
+            try(PreparedStatement statement = connection.prepareStatement(queryPK)){
+
+                ResultSet resultSet = statement.executeQuery(queryPK);
+                while(resultSet.next()){
+                    primaryKey = (String)resultSet.getObject("Column_name");
+                }
+            }
+
+            Object object = null;
+
+            if(primaryKey != null){
+
+                query += primaryKey + " = '" + attribute + "'";
+                try(PreparedStatement statement = connection.prepareStatement(query)){
+
+                    ResultSet resultSet2 = statement.executeQuery(query);
+                    while(resultSet2.next()){
+                        object = buildObject(objectClass, resultSet2);
+                        break;
+                    }
+
+                    if(object != null){
+                        return object;
+                    }else{
+                        System.out.println("No hay objeto con ese parametro"); //modify
+                    }
+                }
+            }
+            else{
+                System.out.println("No hay llave primaria"); //modify
+
+                Field[] classAttributes = objectClass.getDeclaredFields();
+                String defaultAttribute = classAttributes[0].getName();
+                query += defaultAttribute + " = '" + attribute + "'";
+
+                try(PreparedStatement statement = connection.prepareStatement(query)){
+
+                    ResultSet resultSet2 = statement.executeQuery(query);
+                    while(resultSet2.next()){
+                        object = buildObject(objectClass, resultSet2);
+                        break;
+                    }
+
+                    if(object != null){
+                        return object;
+                    }else{
+                        System.out.println("No hay objeto con ese parametro"); //delete
+                    }
+                }
+            }
+
+        }catch(SQLException e){
+            System.out.println(e.getMessage() + "En la tabla " + tableName); //modifiy
+        }
+        return null;
+    }
+
 
 
 
