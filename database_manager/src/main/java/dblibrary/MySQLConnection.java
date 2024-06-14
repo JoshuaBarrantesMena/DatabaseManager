@@ -13,10 +13,10 @@ public class MySQLConnection {
 
     private Connection connection;
 
-    public MySQLConnection(String username, String password, String host, String port, String edition) throws SQLException {
+    public MySQLConnection(String username, String password, String host, String port, String schema) throws SQLException {
         
         DatabaseConnect newConnection = new DatabaseConnect();
-        this.connection = newConnection.connectWithMySQL(username, password, host, port, edition);
+        this.connection = newConnection.connectWithMySQL(username, password, host, port, schema);
     }
 
     public MySQLConnection(Connection pConnection){
@@ -25,35 +25,36 @@ public class MySQLConnection {
     }
 
     public void sendObject(Object pObject) {
+        
+        Class<?> objectClass = pObject.getClass();
+        String tableName = objectClass.getSimpleName().toLowerCase();
+        
         try {
-            Class<?> objectClass = pObject.getClass();
-            String tableName = objectClass.getSimpleName().toLowerCase();
             try{
-                
                 createNewTable(tableName, objectClass);
             }catch(SQLException e){
-                System.out.println(e.getMessage()); //modify
+                System.out.println("[Error al crear la tabla '" + tableName + "' ]: " + e.getMessage());
             }
             
             insertObject(tableName, objectClass, pObject);
         } catch (SQLException | IllegalAccessException e) {
-            System.err.println("Error al mapear la clase a la tabla: " + e.getMessage()); //modify
+            System.err.println("[Error al insertar el objeto en la tabla '" + tableName + "']: " + e.getMessage());
         }
     }
 
     public void updateObject(Object currentObject, Object newObject) {
+                
+        Class<?> objectClass = currentObject.getClass();
+        String tableName = objectClass.getSimpleName().toLowerCase(); 
+        
         try {
-            
-            Class<?> objectClass = currentObject.getClass();
-            String tableName = objectClass.getSimpleName().toLowerCase(); 
-
             if (!tableExist(tableName)) {
-                System.out.println("La tabla " + tableName + " no existe."); //delete
+                System.out.println("[La tabla '" + tableName + "' no existe]");
                 return;
             }
 
             if (!objectExists(tableName, objectClass, currentObject)) {
-                System.out.println("El objeto existente no se encuentra en la tabla."); //modify
+                System.out.println("[El objeto no se encuentra en la tabla '" + tableName + "']");
                 return;
             }
     
@@ -92,25 +93,25 @@ public class MySQLConnection {
     
             try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
                 statement.executeUpdate();
-                System.out.println("Objeto actualizado en la tabla " + tableName + " correctamente."); //delete
             }
         } catch (SQLException | IllegalAccessException e) {
-            System.err.println("Error al actualizar el objeto en la tabla: " + e.getMessage()); //modify
+            System.err.println("[Error al actualizar los valores del objeto en la tabla '" + tableName + "']: " + e.getMessage());
         }
     }
 
     public void deleteObject(Object pObject) {
+        
+        Class<?> objectClass = pObject.getClass();
+        String tableName = objectClass.getSimpleName().toLowerCase();
+        
         try {
-            Class<?> objectClass = pObject.getClass();
-            String tableName = objectClass.getSimpleName().toLowerCase();
-
             if (!this.tableExist(tableName)) {
-                System.out.println("The table [ " + tableName + " ] does not exist."); //modify
+                System.out.println("[La tabla '" + tableName + "' no existe]");
                 return;
             }
 
             if (!this.objectExists(tableName, objectClass, pObject)) {
-                System.out.println("The object does not exist in the table."); //modify
+                System.out.println("[El objeto no se encuentra en la tabla '" + tableName + "']");
                 return;
             }
 
@@ -134,10 +135,9 @@ public class MySQLConnection {
 
             try (PreparedStatement statement = this.connection.prepareStatement(deleteQuery)) {
                 statement.executeUpdate();
-                System.out.println("Object deleted from the table " + tableName + " successfully.");// delete
             }
         } catch (IllegalAccessException | SQLException e) {
-            System.err.println("Error deleting the object from the table: " + e.getMessage()); //modify
+            System.err.println("[Error al eliminar el objeto de la tabla '" + tableName + "'. Posible ausencia o exceso de variables definidas en la clase]: " + e.getMessage());
         }
     }
 
@@ -155,7 +155,7 @@ public class MySQLConnection {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error al recuperar objetos de la tabla: " + e.getMessage()); //modify
+            System.err.println("[Error al recuperar los objetos de la tabla '" + tableName + "']: " + e.getMessage());
         }
         return objList;
     }
@@ -193,12 +193,12 @@ public class MySQLConnection {
                     if(object != null){
                         return object;
                     }else{
-                        System.out.println("No hay objeto con ese parametro"); //modify
+                        System.out.println("[No existe un objeto con el parametro '" + attribute + "']");
                     }
                 }
             }
             else{
-                System.out.println("No hay llave primaria"); //modify
+                System.out.println("[Tabla sin llave primaria definida. Busqueda realizada a partir del primer atributo definido en la clase]");
 
                 Field[] classAttributes = objectClass.getDeclaredFields();
                 String defaultAttribute = classAttributes[0].getName();
@@ -215,13 +215,13 @@ public class MySQLConnection {
                     if(object != null){
                         return object;
                     }else{
-                        System.out.println("No hay objeto con ese parametro"); //delete
+                        System.out.println("[No existe un objeto con el parametro '" + attribute + "']");
                     }
                 }
             }
 
         }catch(SQLException e){
-            System.out.println(e.getMessage() + "En la tabla " + tableName); //modifiy
+            System.out.println("[Error al realizar la busqueda en la tabla '" + tableName + "' del objeto con el parametro '" + attribute + "']: " + e.getMessage());
         }
         return null;
     }
@@ -233,7 +233,6 @@ public class MySQLConnection {
     private void createNewTable(String pTableName, Class<?> pObjectClass) throws SQLException {
         
         if (tableExist(pTableName)) {
-            System.out.println("La tabla " + pTableName + " ya existe."); //delete
             return;
         }
         
@@ -260,14 +259,10 @@ public class MySQLConnection {
         
         query.delete(query.length() - 2, query.length());
         query.append(")");
-
-        if (!primaryKey) {
-            System.out.println("La clase " + pTableName + " no tiene un campo definido para clave primaria."); //delete
-        }
         
         try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
             statement.executeUpdate();
-            System.out.println("Tabla " + pTableName + " creada correctamente."); //delete
+            System.out.println("[Tabla " + pTableName + " creada correctamente]");
         }
     }
 
@@ -299,12 +294,10 @@ public class MySQLConnection {
 
             try (PreparedStatement statement = connection.prepareStatement(insertQuery)) {
                 statement.executeUpdate();
-                System.out.println("Datos insertados en la tabla " + pTableName + " correctamente."); //delete
+                System.out.println("[Datos ingresados correctamente en la tabla '" + pTableName + "']");
             }catch(SQLException e){
-                System.out.println("El objeto no pudo ser ingresado: " + e.getMessage()); //modify
+                System.out.println("[Error al ingresar el objeto en la tabla '" + pTableName + "']: " + e.getMessage());
             }
-        }else{
-            System.out.println("El dato ingresado ya existe en su base de datos"); //delete
         }
     }
 
@@ -377,7 +370,7 @@ public class MySQLConnection {
             }
             
         }catch(SQLException e){
-            System.out.println("Error al comprobar si el objeto existe en la tabla: " + e.getMessage()); //modify
+            System.out.println("[Error al comprobar si el objeto existe en la tabla '" + pTableName + "'. Posible ausencia o exceso de variables definidas en la clase]: " + e.getMessage());
         }
 
         return false;
@@ -417,9 +410,9 @@ public class MySQLConnection {
 
             return instance;
         } catch (NoSuchMethodException e) {
-            throw new SQLException("No se pudo encontrar el constructor predeterminado para la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
+            throw new SQLException("[No existe un constructor por defecto definido en la clase '" + objectClass.getSimpleName() + "']: " + e.getMessage());
         } catch (InstantiationException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-            throw new SQLException("Error al instanciar la clase " + objectClass.getSimpleName() + ": " + e.getMessage(), e); //modify
+            throw new SQLException("[Error al instanciar la clase '" + objectClass.getSimpleName() + "'. Posible ausencia o exceso de variables definidas en la clase]: " + e.getMessage());
         }
     }
 }

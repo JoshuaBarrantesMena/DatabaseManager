@@ -23,26 +23,26 @@ public class MongoConnection {
     }
 
     public void sendObject(Object object) {
+        
+        Class<?> objectClass = object.getClass();
+        String collectionName = objectClass.getSimpleName().toLowerCase();
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        
         try {
-            Class<?> objectClass = object.getClass();
-            String collectionName = objectClass.getSimpleName().toLowerCase();
-            MongoCollection<Document> collection = database.getCollection(collectionName);
-
             Document doc = toJSON(object, objectClass);
             collection.insertOne(doc);
-            System.out.println("Objeto insertado en la colección " + collectionName + " correctamente."); //delete
         } catch (Exception e) {
-            System.err.println("Error al insertar el objeto en la tabla: //" + e.getMessage()); //update
+            System.err.println("[Error al insertar el objeto en la tabla '" + collectionName + "']: " + e.getMessage());
         }
     }
 
     public void updateObject(Object pNewObject) throws NoSuchFieldException, SecurityException {
+                
+        Class<?> objectClass = pNewObject.getClass();
+        String collectionName = objectClass.getSimpleName().toLowerCase();
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        
         try {
-            
-            Class<?> objectClass = pNewObject.getClass();
-            String collectionName = objectClass.getSimpleName().toLowerCase();
-            MongoCollection<Document> collection = database.getCollection(collectionName);
-
             Document newDoc = toJSON(pNewObject, objectClass);
             String idFiledName = objectClass.getSimpleName().toLowerCase() + "_id";
             Field idField = objectClass.getDeclaredField(idFiledName);
@@ -50,30 +50,30 @@ public class MongoConnection {
             Object id = idField.get(pNewObject);
 
             if (id == null) {
-                throw new IllegalArgumentException("El campo ID no puede ser nulo"); //update
+                throw new IllegalArgumentException("[El campo ID no puede ser nulo]");
             }
 
             collection.replaceOne(Filters.eq("_id", id), newDoc);
-            System.out.println("Objeto actualizado en la colección " + collectionName + " correctamente."); //delete
+            System.out.println("[Objeto en la colección '" + collectionName + "' actualizado correctamente]");
         } catch (Exception e) {
-            System.err.println("Error al actualizar el documento en la colección: " + e.getMessage()); //update
+            System.err.println("[Error al actualizar el objeto en la colección '" + collectionName +  "']: " + e.getMessage());
         }
     }
 
     public <T> void deleteObject(Class<T> clase, Object id) {
+        
+        String collectionName = clase.getSimpleName().toLowerCase();
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        Document findDoc = new Document("_id", id);
+        
         try {
-            String collectionName = clase.getSimpleName().toLowerCase();
-            MongoCollection<Document> collection = database.getCollection(collectionName);
-            Document findDoc = new Document("_id", id);
-    
             collection.deleteOne(findDoc);
-            System.out.println("Documento eliminado de la colección " + collectionName + " correctamente."); //delete
         } catch (Exception e) {
-            System.err.println("Error al eliminar el objeto de MongoDB: " + e.getMessage()); //update
+            System.err.println("[Error al eliminar el objeto de la coleccion '" + collectionName + "']: " + e.getMessage());
         }
     }
 
-    public <T> List<T> getAllObject(Class<T> pObjectClass) { //getAllObjects
+    public <T> List<T> getAllObjects(Class<T> pObjectClass) {
         List<T> allObjects = new ArrayList<>();
         String collectionName = pObjectClass.getSimpleName().toLowerCase();
         MongoCollection<Document> collection = database.getCollection(collectionName);
@@ -85,7 +85,7 @@ public class MongoConnection {
                 allObjects.add(instance);
             }
         } catch (Exception e) {
-            System.err.println("Error al recuperar objetos de la colección: " + e.getMessage()); //update
+            System.err.println("[Error al recuperar los objetos de la colección '" + collectionName + "']: " + e.getMessage());
         }
         return allObjects;
     }
@@ -101,7 +101,7 @@ public class MongoConnection {
                 return buildObject(objectClass, doc);
             }
         } catch (Exception e) {
-            System.err.println("Error al recuperar el objeto de la colección: " + e.getMessage()); //update
+            System.err.println("[Error al recuperar el objeto con el parametro '" + id + "' de la colección '" + collectionName + "']: " + e.getMessage());
         }
         return null;
     }
