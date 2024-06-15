@@ -132,8 +132,8 @@ nueva_Conexion.deleteObject (Persona.class, “123456789”); <br>
 
 *[Nota]: La función buscara un objeto en la colección cuyo parámetro asignado como identificador (nombre de la clase + “_id”) sea igual al parámetro ingresado en la función, si la colección no tiene un identificador asignado, la búsqueda no surgirá efecto y no eliminara ningún objeto (revisar la nota del punto 2.2.1).*
 <br> <br> <br> <br>
-## 3 – Conexión con MySQL
-### 3.1 - Constructores de la conexión con MySQL.
+# 3 – Conexión con MySQL
+## 3.1 - Constructores de la conexión con MySQL.
 
 - **Opción #1:** Crear objeto enviando los datos necesarios de la conexión.
 - **Datos necesarios:** ("usuario", "contraseña", "host", "puerto", "edición").
