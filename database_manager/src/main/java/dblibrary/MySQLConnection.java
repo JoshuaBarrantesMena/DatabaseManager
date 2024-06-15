@@ -21,7 +21,11 @@ public class MySQLConnection {
 
     public MySQLConnection(Connection pConnection){
 
-        this.connection = pConnection;
+        try{
+            this.connection = pConnection;
+        }catch(Exception e){
+            System.out.println("[Error al conectar con la base de datos]: " + e.getMessage());
+        }
     }
 
     public void sendObject(Object pObject) {

@@ -16,8 +16,8 @@ public class OracleConnection {
     public OracleConnection(String username, String password, String host, String port, String edition) throws SQLException {
         
         try{
-        DatabaseConnect newConnection = new DatabaseConnect();
-        this.connection = newConnection.connectWithOracle(username, password, host, port, edition);
+            DatabaseConnect newConnection = new DatabaseConnect();
+            this.connection = newConnection.connectWithOracle(username, password, host, port, edition);
         }catch(SQLException e){
             System.out.println("[Error al conectar con la base de datos]: " + e.getMessage());
         }
@@ -26,9 +26,9 @@ public class OracleConnection {
 
     public OracleConnection(Connection pConnection){
         try{
-        this.connection = pConnection;
+            this.connection = pConnection;
         }catch(Exception e){
-        System.out.println("[Error al conectar con la base de datos]: " + e.getMessage());
+            System.out.println("[Error al conectar con la base de datos]: " + e.getMessage());
         }
     }
 
