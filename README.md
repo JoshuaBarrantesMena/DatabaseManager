@@ -1,57 +1,78 @@
- 
+# Documentación de la librería de conexiones a bases de datos desde java.
+### **Autores:** <br>
+__Jhashua Canton,__
+__Joshua Barrantes__
 
-Documentación de la librería de conexiones a bases de datos desde java
-Autores:
-Jhashua Canton 
-Joshua Barrantes
-Librería con la capacidad de insertar objetos de java a una de las bases de datos que la misma librería permite utilizar. 
-1 – Conexión con Oracle
-1.1 - Constructores de la conexión con Oracle
--	Opción #1:  Crear objeto enviando los datos necesarios de la conexión.
--	Datos necesarios: (“usuario”, “contraseña”, “host”, “puerto”, “edición”).
-Ejemplo: 
-OracleConnection nueva_Conexion = new OracleConnection (“user”, “1234”, “localhost”, “1521”, “XE”);
--	Opción #2: Crear objeto enviando un objeto tipo Connection ya definida en la librería.
--	Datos necesarios: (“usuario”, “contraseña”, “host”, “puerto”, “edición”).
-Ejemplo: 
-Connection conn = new Connection (“user”, “1234”, “localhost”, “1521”, “XE”);
-OracleConnection nueva_conexion = new OracleConnection (conn);
-•	Nota: si la conexión tiene algún dato erróneo, ninguna de las funciones de la librería funcionara al momento de ser llamadas.
+*Librería con la capacidad de insertar objetos de java a una de las bases de datos que la misma librería permite utilizar.*
+
+# 1 – Conexión con Oracle
+## 1.1 - Constructores de la conexión con Oracle.
+
+-	**Opción #1:**  Crear objeto enviando los datos necesarios de la conexión.
+-	**Datos necesarios:** (“usuario”, “contraseña”, “host”, “puerto”, “edición”).
+
+Ejemplo: <br>
+OracleConnection nueva_Conexion = new OracleConnection (“user”, “1234”, “localhost”, “1521”, “XE”); <br>
+
+-	**Opción #2:** Crear objeto enviando un objeto tipo Connection ya definida en la librería.
+-	**Datos necesarios:** (“usuario”, “contraseña”, “host”, “puerto”, “edición”). <br>
+
+Ejemplo: <br>
+Connection conn = new Connection (“user”, “1234”, “localhost”, “1521”, “XE”); <br>
+OracleConnection nueva_conexion = new OracleConnection (conn); <br>
+
+*Nota: si la conexión tiene algún dato erróneo, ninguna de las funciones de la librería funcionara al momento de ser llamadas.*
  
-1.2 – Funciones de la conexión con Oracle.
-1.2.1 – Enviar objetos con la función sendObject().
--	Datos necesarios: (objeto_cualquiera).
-Ejemplo:
-Persona nueva_Persona = new Persona (“123456789”, “José Gutiérrez”);
-nueva_conexion.sendObject (nueva_Persona);
-•	Nota: si al buscar la tabla del objeto, esta no existe, esta función creara la tabla, la función busca la primera variable que termine con "_id" para definirla como PRIMARY KEY en la tabla, de no cumplirse, se creara la tabla de igual forma, pero no creara ninguna variable en la tabla como PRIMARY KEY (puede afectar negativamente la experiencia de usuario).
+## 1.2 – Funciones de la conexión con Oracle.
+### 1.2.1 – Enviar objetos con la función sendObject().
 
-1.2.2 – Actualizar objetos con la función updateObject(). 
--	Datos necesarios: (objeto_Desactualizado, objeto_Actualizado).
-Ejemplo:
-Persona nueva_Persona = new Persona (“123456789”, “José Gutiérrez”);
-Persona otra_Persona = new Persona (“123456789”, “José Alberto”);
-nueva_conexion.updateObject (nueva_Persona, otra_Persona);
-•	Nota: Esto obliga al usuario a crear una copia del objeto previo a su modificación en el código, Ambos objetos deben ser del mismo tipo, de no cumplirse esto, la base de datos no actualizará ningún valor, además, si el objeto sin actualizar no se encuentra en la base de datos, no actualizará ni insertará ningún objeto.
+-	**Datos necesarios:** (objeto_cualquiera).
+
+Ejemplo: <br>
+Persona nueva_Persona = new Persona (“123456789”, “José Gutiérrez”); <br>
+nueva_conexion.sendObject (nueva_Persona); <br>
+
+*Nota: si al buscar la tabla del objeto, esta no existe, esta función creara la tabla, la función busca la primera variable que termine con "_id" para definirla como PRIMARY KEY en la tabla, de no cumplirse, se creara la tabla de igual forma, pero no creara ninguna variable en la tabla como PRIMARY KEY (puede afectar negativamente la experiencia de usuario).*
+
+### 1.2.2 – Actualizar objetos con la función updateObject(). 
+
+-	**Datos necesarios:** (objeto_Desactualizado, objeto_Actualizado).
+
+Ejemplo: <br>
+Persona nueva_Persona = new Persona (“123456789”, “José Gutiérrez”); <br>
+Persona otra_Persona = new Persona (“123456789”, “José Alberto”); <br>
+nueva_conexion.updateObject (nueva_Persona, otra_Persona); <br>
+
+*Nota: Esto obliga al usuario a crear una copia del objeto previo a su modificación en el código, Ambos objetos deben ser del mismo tipo, de no cumplirse esto, la base de datos no actualizará ningún valor, además, si el objeto sin actualizar no se encuentra en la base de datos, no actualizará ni insertará ningún objeto.*
  
-1.2.3 – Obtener todos los objetos de una tabla con la función getAllObjects().
--	Datos necesarios: (clase_Del_Objeto.class).
-Ejemplo: 
-List<Persona> = getAllObjects(Persona.class);
-•	Nota: la clase debe tener el constructor sin parámetros declarado de forma obligatoria, además, la función retornara un objeto de tipo List<clase_Del_Objeto> del mismo tipo del objeto que envió a buscar.
+### 1.2.3 – Obtener todos los objetos de una tabla con la función getAllObjects().
 
-1.2.4 – Obtener un objeto especifico de una tabla con la función getObject().
--	Datos necesarios: (clase_Del_Objeto.class, “parametro_Para_Buscar”).
-Ejemplo:
-Persona traer = nueva_Conexion.getObject (Persona.class, “123456789”);
-•	Nota: La función buscara un objeto en la tabla cuyo parámetro de algunos de los campos de la columna de la tabla establecida como llave primaria sea igual al parámetro ingresado en la función, si la tabla no tiene llave primaria, realizara la misma búsqueda, pero a partir del primer atributo declarado en la clase recibida como parámetro en esta función.
+-	**Datos necesarios:** (clase_Del_Objeto.class).
 
-1.2.5 – Eliminar un objeto de una tabla con la función deleteObject().
--	Datos necesarios: (“objeto_A_Eliminar”).
-Ejemplo:
-Persona persona_Existente = new Persona (“123456789”, “José Alberto”);
-nueva_Conexion.deleteObject (persona_Existente);
-•	Nota: si el objeto no existe en la tabla, no se eliminará ningún objeto de la tabla.
+Ejemplo: <br> 
+List<Persona> = getAllObjects(Persona.class); <br>
+
+*Nota: la clase debe tener el constructor sin parámetros declarado de forma obligatoria, además, la función retornara un objeto de tipo List<clase_Del_Objeto> del mismo tipo del objeto que envió a buscar.*
+
+### 1.2.4 – Obtener un objeto especifico de una tabla con la función getObject().
+
+-	**Datos necesarios:** (clase_Del_Objeto.class, “parametro_Para_Buscar”).
+
+Ejemplo: <br>
+Persona traer = nueva_Conexion.getObject (Persona.class, “123456789”); <br>
+
+*Nota: La función buscara un objeto en la tabla cuyo parámetro de algunos de los campos de la columna de la tabla establecida como llave primaria sea igual al parámetro ingresado en la función, si la tabla no tiene llave primaria, realizara la misma búsqueda, pero a partir del primer atributo declarado en la clase recibida como parámetro en esta función.*
+
+### 1.2.5 – Eliminar un objeto de una tabla con la función deleteObject().
+
+-	**Datos necesarios:** (“objeto_A_Eliminar”).
+
+Ejemplo: <br>
+Persona persona_Existente = new Persona (“123456789”, “José Alberto”); <br>
+nueva_Conexion.deleteObject (persona_Existente); <br>
+
+*Nota: si el objeto no existe en la tabla, no se eliminará ningún objeto de la tabla.*
+
 2 – Conexión con MongoDB
 2.1 – Constructores de la conexión con MongoDB
 -	Opción #1: Crear objeto enviando los datos necesarios de la conexión
